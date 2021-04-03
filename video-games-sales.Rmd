@@ -1,0 +1,167 @@
+---
+title: "Data Analisis dan Visualisasi Penjualan Video Games"
+author: "Gasha Sarwono"
+date: "3/30/2021"
+output: 
+  html_document:
+    theme: flatly
+    higlight: zenburn
+    toc: true
+    toc_float:
+      collapsed: false
+    df_print: paged
+---
+
+### 1. Latar Belakang
+
+#### Berikut ini merupakan data dari daftar video games dengan penjualan lebih dari 100.00 eksemplar. 
+
+#### Dengan data berikut saya akan menampilkan sebuah visualisasi dalam bentuk grafik/plot dengan hasil yaitu:
+
+#### Analisis 1 : Jumlah Penjualan Global (Global Sales) berdasarkan dari Genre game yang dimainkan
+
+#### Analisis 2 : Hubungan antara Penjualan Global (Global Sales) dengan Tahun Penerbitan
+
+#### Data yang saya gunakan berasal dari kaggle dengan link sebagai berikut:
+
+#### https://www.kaggle.com/gregorut/videogamesales
+
+
+### 2. Set Up
+**Import Data**
+```{r}
+vgsales <- read.csv("vgsales.csv", sep=",", na.strings = c("N/A"))
+head(vgsales)
+```
+
+**Aktifkan library**
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(scales)
+library(ggrepel)
+```
+
+
+### 3. Inspeksi Data
+**Mengecek tipe data**
+```{r}
+glimpse(vgsales)
+```
+Terdapat kolom dengan tipe data yang tidak sesuai, yaitu kolom "Platform", "Year", "Genre", dan "Publisher".
+
+Tetapi karena data yang dibutuhkan untuk analisis visualisasi hanya berfokus pada "Year" dan "Genre", maka hanya 2 kolom itu saja yang diubah tipe datanya sekaligus sebagai efesiensi metode pengerjaan dan efektifitas waktu pengerjaan.
+
+**Mengubah tipe data kolom menjadi lebih sesuai**
+```{r}
+vgsales$Year <- as.factor(vgsales$Year)
+vgsales$Genre <- as.factor(vgsales$Genre)
+glimpse(vgsales)
+```
+
+**Mengecek data yang missing**
+```{r}
+colSums(is.na(vgsales))
+```
+Pada kolom "Year" terdapat missing value sebanyak 271, dan pada kolom "Publisher" sebanyak 58. Karena terdapat missing value, maka yang saya lakukan adalah menghilangkan missing value tersebut 
+
+**Menghapus missing value**
+```{r}
+vgsaless <- na.omit(vgsales)
+```
+
+**Pengecekan missing value setelah di hapus**
+```{r}
+colSums(is.na(vgsaless))
+```
+
+### 4. Subsetting dan Aggregation
+
+**Subsetting dan Aggregation data dilakukan untuk memilih dan mengolah data yang akan kita gunakan untuk visualisasi**
+
+
+**4.1 Jumlah Penjualan Global (Global Sales) berdasarkan dari Genre game yang dimainkan**
+
+Membuat variabel bernama "data1" untuk dianalisis
+```{r}
+data1 <- vgsaless[,c("Genre","Global_Sales")]
+data1 <- aggregate(Global_Sales~Genre,vgsaless,FUN=mean)
+data1
+
+```
+
+**4.2 Hubungan antara Penjualan Global (Global Sales) dengan Tahun Penerbitan**
+
+Membuat variabel bernama "data2" untuk dianalisis
+```{r}
+data2 <- vgsaless[,c("Year","Global_Sales")]
+data2 <- aggregate(Global_Sales~Year,vgsaless,FUN=mean)
+data2
+```
+
+### 5. Visualisasi
+
+**Menampilkan data dengan visualisasi**
+
+**5.1 Jumlah Penjualan Global (Global Sales) berdasarkan dari Genre game yang dimainkan**
+```{r}
+plot1 <-  ggplot(data1,aes(x=Global_Sales, y=reorder(Genre,Global_Sales))) +
+          geom_col(fill="darkblue",show.legend = F) +
+          geom_text(aes(label= round(Global_Sales,2)),color="white") +
+          labs(title="Top Genre by Global Sales",x="Global Sales", y="Genre") +
+          scale_x_continuous(labels = dollar_format(prefix="$",suffix = "M"))+
+          theme_dark()
+plot1
+```
+
+**5.2 Hubungan antara Penjualan Global (Global Sales) dengan Tahun Penerbitan**
+```{r}
+plot2 <-  ggplot(data2,aes(x=Global_Sales, y=Year)) +
+          geom_point(pch=15,color="darkblue") +
+          geom_text_repel(data = data2[order(data2$Global_Sales, decreasing = T)[1] , ],
+          aes(label = round(Global_Sales,2)), size = 3) +
+          geom_text_repel(data = data2[order(data2$Global_Sales, decreasing = F)[1] , ],
+          aes(label = round(Global_Sales,2)), size = 3) +
+          theme_minimal()+
+          labs(title = "Hubungan antara Penjualan dengan Tahun Penerbitan",
+          x = "Global Sales",
+          y = "Year") +
+          scale_x_continuous(labels = dollar_format(prefix="$",suffix = "M"))
+
+plot2
+```
+
+### 6. Summary
+
+**Dari data yang sudah diolah dan divisualisasi data diambil beberapa kesimpulan.**
+
+**6.1 Jumlah Penjualan Global (Global Sales) berdasarkan dari Genre game yang dimainkan.**
+
+Analisis:
+
+-Terdapat 12 Genre game dipasaran (market) pada tahun 1980 hingga 2020
+
+-Game dengan Genre Platfrom merupakan Genre yang paling laris dengan jumlah penjualan global sebanyak $0.95 Millions
+
+-Game dengan Genre Adventure merupakan Genre yang kurang laris dengan jumlah penjualan global sebanyak $0.18 Millions
+
+Saran:
+
+Berdasarkan analisis diatas dapat disarankan jika pembuat game ingin membuat game maka buatlah dengan genre Platform, karena genre tersebut merupakan genre yang paling laris/laku dipasaran.
+
+
+**6.2 Hubungan antara Penjualan Global (Global Sales) dengan Tahun Penerbitan.**
+
+Analisis:
+
+-Penjualan game di analisis mulai dari tahun 1980 hingga 2020
+
+-Penjualan tertinggi dengan nilai $4.32 Millions ada pada tahun 1989
+
+-Penjualan tertinggi dengan nilai $0.02 Millions ada pada tahun 2017
+
+-Nilai penjualan mulai terlihat konstan dengan nilai yang tidak begitu jauh antar tahunnya, mulai dari tahun 1993 hingga 2020
+
+
+Saran:
+
+Berdasarkan analisis diatas dapat disarankan jika pembuat game ingin membuat game yang memiliki nilai penjualan yang tinggi, maka pembuat game dapat melihat refrensi baik secara konsep ataupun tipe game dari game yang ada pada tahun 1980 sampai 1990 dan pastinya bisa dikemas secara modern
